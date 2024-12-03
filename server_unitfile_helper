@@ -7,7 +7,7 @@ sudo touch $TIMER_PATH
 
 if [[ -f "$SERVICE_PATH" ]]; then
 	echo "Creating service file..."
-	cat << 'EOF1' > "$SERVICE_PATH"
+	cat <<EOF1 > "$SERVICE_PATH"
 	[Unit]
 	Description=Generate Index Script Service
 	Wants=network-online.target
@@ -22,7 +22,7 @@ fi
 
 if [[ -f "$TIMER_PATH" ]]; then
 	echo "Creating timer file..."
-	cat << 'EOF2' > "$TIMER_PATH"
+	cat <<EOF2 > "$TIMER_PATH"
 	[Unit]
 	Description=Generate Index Service Timer
 
