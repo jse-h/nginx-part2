@@ -1,0 +1,36 @@
+#!/bin/bash
+SERVICE_PATH="/etc/systemd/system/generate_index.service"
+TIMER_PATH="/etc/systemd/system/generate_index.timer"
+
+sudo touch $SERVICE_PATH
+sudo touch $TIMER_PATH
+
+if [[ -f "$SERVICE_PATH" ]]; then
+	echo "Creating service file..."
+	cat << 'EOF1' > "$SERVICE_PATH"
+	[Unit]
+	Description=Generate Index Script Service
+	Wants=network-online.target
+	After=network-online.target
+
+	[Service]
+	User=webgen
+	Group=webgen
+	ExecStart=/var/lib/webgen/bin/generate_index
+	EOF1
+fi
+
+if [[ -f "$TIMER_PATH" ]]; then
+	echo "Creating timer file..."
+	cat << 'EOF2' > "$TIMER_PATH"
+	[Unit]
+	Description=Generate Index Service Timer
+
+	[Timer]
+	OnCalendar=*-*-* 05:00:00
+	Persistent=true
+
+	[Install]
+	WantedBy=timers.target
+	EOF2
+fi

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+echo "Creating User 'webgen'..."
+sudo useradd -r -d /var/lib/webgen -s /usr/sbin/nologin webgen
+
+echo "Creating 'webgen' home directory..."
+sudo mkdir -p /var/lib/webgen
+
+echo "Creating directory structure (bin, documents, HTML)"
+sudo mkdir -p /var/lib/webgen/bin /var/lib/webgen/HTML
+sudo mkdir -p /var/lib/webgen/documents
+
+echo "Setting up files..."
+sudo touch /var/lib/webgen/bin/generate_index
+sudo touch /var/lib/webgen/HTML/index.html
+sudo touch /var/lib/webgen/documents/file-one
+sudo touch /var/lib/webgen/documents/file-two
