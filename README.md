@@ -14,7 +14,9 @@ For part 2, the instructions are set up using the Arch Linux distribution for Li
 
 ## Droplet Creation
 
-A droplet is a 
+From DigitalOcean:
+
+*DigitalOcean Droplets are Linux-based virtual machines (VMs) that run on top of virtualized hardware. Each Droplet you create is a new server you can use, either standalone or as part of a larger, cloud-based infrastructure.*
 
 In this repository I am going to show an example of creating 2 servers or droplets using DigitalOcean's service. I will also be using a specific Arch Linux image and droplet configuration.
 
@@ -22,6 +24,7 @@ In this repository I am going to show an example of creating 2 servers or drople
 ![Create Droplet](assets/create_drop.png)
 
 2. In this example, we will have to connect to our servers via SSH to configure them. Add the relevant authentication under 'Choose Authentication Method' In my example, I will be using an existing SSH key I already configured.
+
 ![Droplet Authentication](assets/droplet_key.png)
 
 
@@ -32,6 +35,8 @@ In this repository I am going to show an example of creating 2 servers or drople
 > In this example, the droplets have the tag as 'web' but they can be anything. When we configure the load balancer, it will use the tags refer to both servers, so it is important the tags match.
 
 ## Load Balancer Creation
+
+*A load balancer is a solution that acts as a traffic proxy and distributes network or application traffic across endpoints on a number of servers. Load balancers are used to distribute capacity during peak traffic times, and to increase reliability of applications.* [^1]
 
 1. Click on Create > Load Balancer
 
@@ -446,14 +451,14 @@ sudo pacman -S ufw
 
 ### Allowing `ssh` and `http` access
 
-For instructional reasons, we will enable ssh from anywhere. In practice, we would **only** allow ssh connections from specific and private ip addresses, as well as using host service that authorizes private connections. [^5]
+For instructional reasons, we will enable ssh from anywhere. In practice, we would **only** allow ssh connections from specific and private ip addresses, as well as using host service that authorizes private connections.
 
 To allow **ssh connection**:
 ```
 sudo ufw allow ssh
 ```
 
-We also want to **limit the rate of ssh** attempts to prevent multiple unauthorized attempted connections: [^5]
+We also want to **limit the rate of ssh** attempts to prevent multiple unauthorized attempted connections:
 ```
 sudo ufw limit ssh
 ```
@@ -519,3 +524,7 @@ sudo reboot
 
 >[!NOTE]
 > If the error still exists, your system may need to be rebooted using `sudo reboot` which will kick you out of your remote Linux system and will require you to ssh back in. Keep in when troubleshooting, UFW should not have been enabled yet since we are only fixing the iptables issue. Only enable if you are able to successfully allow SSH for UFW so you can SSH back into your remote server.
+
+# References
+
+[^1]: https://www.f5.com/glossary/load-balancer
