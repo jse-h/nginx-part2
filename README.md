@@ -1,12 +1,12 @@
 # Setting up the server
 
-## Part 1 - Server Setup
+# Part 1 - Server Setup
 
-This server setup uses the Arch Linux distribution. You will also be required to clone this git repository to get the two server setup helper bash scripts.
+This server setup uses the Arch Linux distribution. You will also be required to clone this git repository to get the two server setup helper bash scripts. This setup will be used for 2 servers using DigitalOcean's Droplets as our Linux-based virtual machines.
 
-### User and File Setup
+## User and File Setup
 
-The `server_setup_helper` file is a simple bash script that will help create our system user and starting files. This script needed to be executed using `sudo`.
+The `server_setup_helper` file is a simple bash script that will help create our system user and starting files. This script needed to be executed using `sudo`. This script will also need execute permissions using `chmod` to give it the relevant execute permissions.
 
 To run the script, copy and run the command below while in the same directory as your script:
 ```bash
@@ -104,23 +104,23 @@ There are no changes required to the `index.html` file. We will be using the `ge
 
 3. `file-one` and `file-two` files
 
-Simply using your text editor, provide sample text for this plain text file. The purpose of this file is to contain some text so you confirm the files are downloadable so the server is effectively acting as a file server. The commands below will open each file:
+Simply using your text editor, provide any sample text for this plain text file. The purpose of this file is to contain some text so you confirm the files are downloadable so the server is effectively acting as a file server. The commands below will open each file:
 ```
 sudo nvim /var/lib/webgen/documents/file-one
 sudo nvim /var/lib/webgen/documents/file-two
 ```
 
-In `file-one`
+For example, in `file-one`
 ```
 This is file one!
 ```
 
-In `file-two`
+For example, in `file-two`
 ```
 This is file two!
 ```
 
-#### Changing ownerships and permissions
+### Changing ownerships and permissions
 
 This last step of the user and file setup is to enable permissions and ownerships for some of the files created.
 
@@ -139,9 +139,17 @@ Giving execute permissions to the `generate_index` script:
 sudo chmod +x /var/lib/webgen/bin/generate_index
 ```
 
-### Service and Timer Setup
+## Service and Timer Setup
 
-Run unit file script
+Next we will be setting up the service and timer files for the server. The service file will run our `generate_index` script and the timer will start our service at a time window we specified. This means we will get an updated `index.html`, our system information, every interval of the time specified.
+
+The script **requires sudo privileges** to run like the previous script. To run the script:
+
+```
+sudo ./server_unitfile_helper
+```
+
+The contents of the script:
 ```bash
 #!/bin/bash
 SERVICE_PATH="/etc/systemd/system/generate_index.service"
@@ -150,55 +158,304 @@ TIMER_PATH="/etc/systemd/system/generate_index.timer"
 sudo touch $SERVICE_PATH
 sudo touch $TIMER_PATH
 
-# Creating generate_index.service file using here document
-if [[ -f "$SERVICE_PATH" ]]; then
-	echo "Creating service file..."
-	cat << EOF1 > "$SERVICE_PATH" << EOF2 > "$TIMER_PATH"
-	[Unit]
-	Description=Generate Index Script Service
-	Wants=network-online.target
-	After=network-online.target
+echo "Creating service file..."
+cat <<EOF1 > "$SERVICE_PATH"
+[Unit]
+Description=Generate Index Script Service
+Wants=network-online.target
+After=network-online.target
 
-	[Service]
-	User=webgen
-	Group=webgen
-	ExecStart=/var/lib/webgen/bin/generate_index
-	EOF1
-fi
+[Service]
+User=webgen
+Group=webgen
+ExecStart=/var/lib/webgen/bin/generate_index
+EOF1
 
-# Creating generate_index.timer file using here document
-if [[ -f "$TIMER_PATH" ]]; then
-	echo "Creating timer file..."
-	cat << EOF2 > "$TIMER_PATH"
-	[Unit]
-	Description=Generate Index Service Timer
+echo "Creating timer file..."
+cat <<EOF2 > "$TIMER_PATH"
+[Unit]
+Description=Generate Index Service Timer
 
-	[Timer]
-	OnCalendar=*-*-* 05:00:00
-	Persistent=true
+[Timer]
+OnCalendar=*-*-* 05:00:00
+Persistent=true
 
-	[Install]
-	WantedBy=timers.target
-	EOF2
-fi
+[Install]
+WantedBy=timers.target
+EOF2
+
 ```
 
-go over contents of script, must use sudo
+### Enabling and starting service files
 
-enabling/starting services and timers
+Run the command below to **enable** the timer so it starts automatically after system boot:
 
-# nginx-setup
+```
+sudo systemctl enable generate_index.timer
+```
 
-install nginx
+Run the command below to **start** the timer:
 
-Using the sites-available and sites-enabled approach for web server
+```
+sudo systemctl start generate_index.timer
+```
 
-configure nginx.conf
-copy paste to configure server block
+To verify if the **status** of the timer service is active and runs successfully, run the command:
 
-enable server block with symlink
-sudo ln -s /etc/nginx/sites-available/webgen.conf /etc/nginx/sited-enabled/
+```
+sudo systemctl status generate_index.timer
+```
 
-add /sites-enabled directory to nginx.conf
+You should see part of the output message displayed that says `Active: active(waiting)` which tells that the timer is activate.
 
-restart -> start nginx
+To test if the service itself runs successfully, similarly, start the service by running:
+
+```
+sudo systemctl start generate_index.service
+```
+
+>[!NOTE]
+> By starting the service, you are checking the single instance of the service being ran. We **do not** want to enable the service, as the **service's execution will be handled by the timer** which is enabled instead.
+
+And again, check the status:
+```
+sudo systemctl status generate_index.service
+```
+
+You will see in the output that the service's active status is `inactive(dead)` because the service has completed its task in running the `generate_index` script once, and generated the `index.html` file. To see the a detailed log, you can run the command:
+
+```
+sudo journalctl -u generate_index.service
+```
+
+Below the log you will see that the service started, then generated `index.html` file, and finally deactivated succesfully.
+
+## nginx Setup
+
+In this task, nginx is used and configured to act as a web server to server our `index.html` page and display the system information.
+
+### Install nginx
+
+First, install the nginx package by running the command:
+
+```
+sudo pacman -S nginx
+```
+
+### Configuring nginx.conf
+
+In the configuration for nginx, I will be making use of server block files. Server block files serve as multiple domains and allows disabling and enabling certain sites. Creating server blocks helps managing separate configurations for different servers or websites easier. Since the server block is split into separte files, they can be easily disabled or enabled without heavily modifying the `nginx.conf` file.
+
+In this configuration step, I will be using the `sites-enabled` and `sites-available` approach.
+
+First create the following directories:
+
+```
+sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
+```
+
+Using the text editor, create a new server block file by creating and opening the file:
+
+```
+sudo nvim /etc/nginx/sites-available/webgen.conf
+```
+
+Copy the code below into the `webgen.conf` file created:
+
+```
+server {
+   listen 80;
+   listen [::]:80;
+   server_name webgen.sysinfo;
+   root /var/lib/webgen/HTML;
+   index index.html;
+   
+   location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location /documents {
+        alias /var/lib/webgen/documents/;
+        autoindex on;
+        autoindex_exact_size off;
+        autoindex_localtime on;
+        try_files $uri $uri/ =404;
+    }
+}
+```
+
+Now that the server is configured and the index file is specified, nginx.conf needs to be configured to connect to our desired server.
+
+Using a text editor, open the `nginx.conf` file:
+
+```
+sudo nvim /etc/nginx/nginx.conf
+```
+
+There will be a lot of default values, and since server blocks are being utilized in this configuration, there are minimal modifications required.
+
+At the top of the `nginx.conf` file, you can see part of the file that specifies the user that is commented out:
+
+```
+...
+#user http;
+worker_processes 1;
+...
+```
+
+Change this section of code to the code below:
+```
+user webgen webgen;
+worker_processes auto;
+```
+
+This allows nginx the correct permissions for file management involving `webgen` and aligns the web server service with our specified user.
+
+>[!NOTE]
+> Changing the worker_processes directive is optional, but it defines for nginx the amount of connections accepted and how many processors will be made use. Using `auto` will allow nginx to auto-detect the optimal value.
+
+A last and simple step to modifying the `conf` file is to append our `sites-enabled` directory.
+
+In the `http` block, append the `include` code:
+
+```
+...
+http {
+    include /etc/nginx/sites-enabled/*;
+}
+...
+```
+
+Finally, enable the server block to be utilized by simply creating a symbolic link:
+
+```
+sudo ln -s /etc/nginx/sites-available/webgen.conf /etc/nginx/sites-enabled/webgen.conf
+```
+
+### Testing nginx services
+
+After the configuration is complete, we can test our nginx services by running a few commands.
+
+First lets restart nginx after all of our changes made:
+
+```
+sudo systemctl restart nginx
+```
+
+We can test and check for syntax errors in our `nginx.conf` file using the command:
+```
+sudo nginx -t
+```
+
+Then check the status of the nginx service:
+
+```
+sudo systemctl status nginx
+```
+
+>[!CAUTION]
+> You may receive a warning during the status check for your nginx service that looks like:
+>
+> ` [warn] 18872#18872: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size`
+>
+> Open the `nginx.conf` file and append these configurations in the `http` block to fix this error:
+> ```
+> http {
+>    types_hash_max_size 4096;
+>    server_names_hash_bucket_size 128;
+>    ...
+> }
+> ```
+> Restart and check the status of the nginx service after making these changes.
+
+If you see that the nginx service is `active(running)` then at this point the server should be up!
+
+## UFW Setup for SSH and HTTP
+
+Now that the server is configured, a firewall can be setup to secure the server. We will be using Arch Linux's Uncomplicated Firewall (UFW) which is a program that manages nftables and iptables, essentially filtering traffic before it reaches the network. In this instruction, we will set up UFW to allow `ssh` and `http` from anywhere as an instructional example. In practice, `ssh` should be only allowed in enterprise settings.
+
+### Installing `ufw` package
+
+First, use the `pacman` package manager to install `ufw`:
+```
+sudo pacman -S ufw
+```
+
+>[!WARNING]
+> **Do not** enable UFW immediately after installing the package. We will need to configure it to allow ssh and http otherwise we will not have access to the remote system anymore after exiting.
+
+### Allowing `ssh` and `http` access
+
+For instructional reasons, we will enable ssh from anywhere. In practice, we would **only** allow ssh connections from specific and private ip addresses, as well as using host service that authorizes private connections. [^5]
+
+To allow **ssh connection**:
+```
+sudo ufw allow ssh
+```
+
+We also want to **limit the rate of ssh** attempts to prevent multiple unauthorized attempted connections: [^5]
+```
+sudo ufw limit ssh
+```
+
+Next, since we are working with web servers, we want to allow **http connections**:
+```
+sudo ufw allow http
+```
+
+After each of these commands, we will see an output message saying `Rules updated` and `Rules updated (v6)`.
+
+Finally, enable `ufw` after creating our rules:
+```
+sudo ufw enable
+```
+
+To **check the status** of the firewall and our rules:
+```
+sudo ufw status verbose
+```
+
+Your output should be displayed like below:
+```
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22                         LIMIT IN    Anywhere                  
+80                         ALLOW IN    Anywhere                  
+22 (v6)                    LIMIT IN    Anywhere (v6)             
+80 (v6)                    ALLOW IN    Anywhere (v6)  
+```
+
+At this point your firewall should be active and enabled on system startup. If you run into errors please refer to the troubleshooting section below.
+
+### Troubleshooting
+You may run into errors regarding iptables while allowing connections. For example:
+
+``` 
+[Errno 2] iptables v1.8.10 (legacy): can't initialize iptables table 'filter': Table does not exist (do you need to insmod?)
+Perhaps iptables or your kernel needs to be upgraded.
+```
+
+To fix this error, you may need to update your system and packages (as it states the iptable version is a legacy version). Run these commands below to fix this error:
+
+Updating system:
+```
+sudo pacman -Syu
+```
+Installing new iptables version:
+```
+sudo pacman -S iptables
+```
+Restart iptables service:
+```
+sudo systemctl restart iptables
+```
+
+Reboot system (allow some time before ssh-ing into server again):
+```
+sudo reboot
+```
+
+>[!NOTE]
+> If the error still exists, your system may need to be rebooted using `sudo reboot` which will kick you out of your remote Linux system and will require you to ssh back in. Keep in mind that we still have **not** enabled the UFW yet, so we are still able to regularly ssh in.
