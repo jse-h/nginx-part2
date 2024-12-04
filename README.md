@@ -525,6 +525,13 @@ sudo reboot
 >[!NOTE]
 > If the error still exists, your system may need to be rebooted using `sudo reboot` which will kick you out of your remote Linux system and will require you to ssh back in. Keep in when troubleshooting, UFW should not have been enabled yet since we are only fixing the iptables issue. Only enable if you are able to successfully allow SSH for UFW so you can SSH back into your remote server.
 
+# Server Example
+
+After all server configurations are complete, you can attempt to connect to your load balancer using its IP address from DigitalOcean. As you can see in the screenshot below, I have entered the IP Address of the Load Balancer, and the HTML page shows the public IP address of the droplet it has pushed my request to.
+
+![Load Balancer with nginx](assets/load_balancer_example.png)
+
+![File Server](assets/file_server.png)
 # References
 
 [^1]: https://www.f5.com/glossary/load-balancer
