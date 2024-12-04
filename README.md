@@ -1,6 +1,65 @@
-# Setting up the server
+# About Assignment
 
-# Part 1 - Server Setup
+Note that this is part 2 of the instructions from [part 1](https://github.com/jse-h/nginx-part1) of setting up a file server secured with UFW and configured to serve an HTML page using nginx's web server. This repository contains some modified instructions and code since this is an extension that teaches you to configure a load balancer that distributes attempted traffic across 2 servers we will be creating.
+
+For part 2, the instructions are set up using the Arch Linux distribution for Linux. Part 2 will instruct how to setup a Bash script that generates a static index.html file that displays some system information. By using the systemd utility, a service file will be configured to execute the script with a timer file that activates the service everyday at 05:00. The HTML document will be served using the web server nginx secured by the Uncomplicated Firewall ufw package.
+
+# Repository Contents
+
+1. `server_setup_helper` bash script file to streamline system user setup
+2. `server_unitfile_helper` bash script file to streamline service and timer setup
+3. `assets` folder, images for the README
+
+# Part 1 - Load Balancer and Droplet Deployment
+
+## Droplet Creation
+
+A droplet is a 
+
+In this repository I am going to show an example of creating 2 servers or droplets using DigitalOcean's service. I will also be using a specific Arch Linux image and droplet configuration.
+
+1. Go to DigitalOcean and on the top right, click on Create > Droplet
+![Create Droplet](assets/create_drop.png)
+
+2. In this example, we will have to connect to our servers via SSH to configure them. Add the relevant authentication under 'Choose Authentication Method' In my example, I will be using an existing SSH key I already configured.
+![Droplet Authentication](assets/droplet_key.png)
+
+
+3. Configure your droplet set the quantity to 2 droplets. In my example, I will be using the region **San Francisco 3** and my own **custom image** of Arch Linux distribution. You can also give each a name that you would like.
+![Droplet Quantity](assets/drop_amt.png)
+
+>[!NOTE]
+> In this example, the droplets have the tag as 'web' but they can be anything. When we configure the load balancer, it will use the tags refer to both servers, so it is important the tags match.
+
+## Load Balancer Creation
+
+1. Click on Create > Load Balancer
+
+![Create Load Balancer](assets/create_load.png)
+
+2. Select **Regional** for the Load Balancer Type and select the **same datacenter regions as your droplets** that were created previously.
+
+3. Use the **default** setting for **VPC Network**
+
+4. Choose **External (Public)** for network visibility, this means external web traffic can access this Load Balancer.
+
+5. Change the **number of nodes** to **2** for both of our file servers
+
+6. Type the **same tag** that you chose when you created the 2 droplets. In my example it would be 'web'.
+![Connect Load Balancer](assets/load_connect.png)
+
+7. Leave the forwarding rules to default (only using HTTP protocol for these instructions)
+
+8. Finally give your Load Balancer a name and click **Create Load Balancer** on the bottom.
+
+If you have done these steps your setup may look like this:
+
+![Load Balancer Complete Setup](assets/balancer_complete.png)
+
+>[!NOTE]
+> The status of your droplets may look different or as `offline` because we will need to set up the servers. Follow the instructions in part 2 to set up the servers in each droplet.
+
+# Part 2 - Server Setup
 
 This server setup uses the Arch Linux distribution. You will also be required to clone this git repository to get the two server setup helper bash scripts. This setup will be used for 2 servers using DigitalOcean's Droplets as our Linux-based virtual machines.
 
@@ -143,8 +202,9 @@ sudo chmod +x /var/lib/webgen/bin/generate_index
 
 Next we will be setting up the service and timer files for the server. The service file will run our `generate_index` script and the timer will start our service at a time window we specified. This means we will get an updated `index.html`, our system information, every interval of the time specified.
 
-The script **requires sudo privileges** to run like the previous script. To run the script:
+The script **requires sudo privileges** to run like the previous script as well as relevant execute permissions.
 
+Command to run the script:
 ```
 sudo ./server_unitfile_helper
 ```
@@ -458,4 +518,4 @@ sudo reboot
 ```
 
 >[!NOTE]
-> If the error still exists, your system may need to be rebooted using `sudo reboot` which will kick you out of your remote Linux system and will require you to ssh back in. Keep in mind that we still have **not** enabled the UFW yet, so we are still able to regularly ssh in.
+> If the error still exists, your system may need to be rebooted using `sudo reboot` which will kick you out of your remote Linux system and will require you to ssh back in. Keep in when troubleshooting, UFW should not have been enabled yet since we are only fixing the iptables issue. Only enable if you are able to successfully allow SSH for UFW so you can SSH back into your remote server.
