@@ -23,13 +23,13 @@ In this repository I am going to show an example of creating 2 servers or drople
 1. Go to DigitalOcean and on the top right, click on Create > Droplet
 ![Create Droplet](assets/create_drop.png)
 
-2. In this example, we will have to connect to our servers via SSH to configure them. Add the relevant authentication under 'Choose Authentication Method' In my example, I will be using an existing SSH key I already configured.
+2. Configure your droplet set the quantity to 2 droplets. In my example, I will be using the region **San Francisco 3** and my own **custom image** of Arch Linux distribution. You can also give each a name that you would like.
+![Droplet Quantity](assets/drop_amt.png)
+
+3. In this example, we will have to connect to our servers via SSH to configure them. Add the relevant authentication under 'Choose Authentication Method' In my example, I will be using an existing SSH key I already configured.
 
 ![Droplet Authentication](assets/droplet_key.png)
 
-
-3. Configure your droplet set the quantity to 2 droplets. In my example, I will be using the region **San Francisco 3** and my own **custom image** of Arch Linux distribution. You can also give each a name that you would like.
-![Droplet Quantity](assets/drop_amt.png)
 
 >[!NOTE]
 > In this example, the droplets have the tag as 'web' but they can be anything. When we configure the load balancer, it will use the tags refer to both servers, so it is important the tags match.
